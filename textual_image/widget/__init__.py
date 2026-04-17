@@ -10,6 +10,7 @@ from textual_image.renderable.sixel import SixelOptions
 from textual_image.renderable.tgp import Image as TGPRenderable
 from textual_image.renderable.unicode import Image as UnicodeRenderable
 from textual_image.widget._base import Image as BaseImage
+from textual_image.widget.kitty import Image as KittyImage
 from textual_image.widget.sixel import Image as SixelImage
 
 # Run `get_cell_size()` once to fill the cache,
@@ -52,6 +53,7 @@ class UnicodeImage(BaseImage, Renderable=UnicodeRenderable):
 __all__ = [
     "Image",
     "TGPImage",
+    "KittyImage",
     "SixelImage",
     "SixelOptions",
     "HalfcellImage",
