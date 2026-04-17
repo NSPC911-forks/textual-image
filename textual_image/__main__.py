@@ -5,6 +5,7 @@
 import sys
 from argparse import ArgumentParser
 from importlib.util import find_spec
+from pathlib import Path
 
 from textual_image.demo.renderable import RENDERING_METHODS
 
@@ -14,17 +15,22 @@ default_mode = "rich" if find_spec("textual") is None else "textual"
 parser = ArgumentParser(description="Demo the capabilities of textual-image")
 parser.add_argument("mode", choices=["rich", "textual"], nargs="?", default=default_mode)
 parser.add_argument("-m", "--method", choices=RENDERING_METHODS.keys(), default="auto")
+parser.add_argument("--image", help="Path to an image file to use for the demo. If not provided, a default image will be used.", default=Path(__file__).parent / "gracehopper.jpg")
 arguments = parser.parse_args()
 
 if arguments.mode == "rich":
-    from textual_image.demo.renderable import run as run_rich_demo
+    from textual_image.demo import renderable
 
-    run_rich_demo(arguments.method)
+    renderable.TEST_IMAGE = Path(arguments.image)
+
+    renderable.run(arguments.method)
 elif not textual_available:
     sys.stderr.write(
         "Optional Textual dependency not available. Install this package as `textual-image[textual]` for Textual support."
     )
 else:
-    from textual_image.demo.widget import run as run_textual_demo
+    from textual_image.demo import widget
 
-    run_textual_demo(arguments.method)
+    widget.TEST_IMAGE = Path(arguments.image)
+
+    widget.run(arguments.method)
