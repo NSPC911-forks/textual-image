@@ -160,7 +160,10 @@ class _ImageKittyImpl(Widget, can_focus=False, inherit_css=False):
             )
 
         kitty_segments = self._get_kitty_segments(control_data)
-        lines = [Strip([])] * (crop.height - 1) + [Strip(kitty_segments, cell_length=crop.width)]
+        clear_style = self._get_clear_style()
+        clear_segment = Segment(" " * crop.width, style=clear_style)
+        lines = [Strip([clear_segment], cell_length=crop.width) for _ in range(crop.height - 1)]
+        lines.append(Strip([clear_segment, *kitty_segments], cell_length=crop.width))
         return lines
 
     def _image_to_control_data(self, image_data: PixelData, crop: Region) -> str:
@@ -213,3 +216,7 @@ class _ImageKittyImpl(Widget, can_focus=False, inherit_css=False):
             Segment(control_data, style=_NULL_STYLE, control=((ControlType.CURSOR_FORWARD, 0),)),
             Segment(Control.move_to(visible_region.right, visible_region.bottom).segment.text, style=_NULL_STYLE),
         ]
+
+    def _get_clear_style(self) -> Style:
+        _, color = self.background_colors
+        return Style(bgcolor=color.rich_color)
