@@ -18,7 +18,6 @@ is_tty = sys.__stdout__ and sys.__stdout__.isatty()
 Image: Type[TGPImage | KittyImage | SixelImage | HalfcellImage | UnicodeImage]
 
 # TGP should be on top, as it performs way better than Sixel.
-# However, the only terminal with TGP unicode diacritic support I know of is Kitty.
 # Konsole and wezterm report TGP support, but don't work with our placeholder implementation, but do with Sixel.
 # As Kitty does *not* support Sixel, this order should be best in terms of compatibility.
 if is_tty and kitty.query_terminal_support():
