@@ -1,7 +1,7 @@
 """Provides a Textual `Widget` to render images as Sixels (<https://en.wikipedia.org/wiki/Sixel>) in the terminal."""
 
 import logging
-from typing import IO, Iterable, NamedTuple
+from typing import IO, ClassVar, Iterable, NamedTuple
 
 from PIL import Image as PILImage
 from rich.console import Console, ConsoleOptions, RenderResult
@@ -87,6 +87,14 @@ class _NoopRenderable:
 class Image(BaseImage, Renderable=_NoopRenderable):
     """Textual `Widget` to render images as Sixels (<https://en.wikipedia.org/wiki/Sixel>) in the terminal."""
 
+    DEFAULT_OPTIONS: ClassVar[SixelOptions | None] = None
+    """Default ``SixelOptions`` used when no ``sixel_options`` is passed to ``__init__``.
+
+    ``None`` defers to ``image_to_sixels``' own default.  Subclasses can
+    override this to change the project-wide default without having to pass
+    ``sixel_options`` at every call site.
+    """
+
     def __init__(
         self,
         image: StrOrBytesPath | IO[bytes] | PILImage.Image | None = None,
@@ -105,7 +113,8 @@ class Image(BaseImage, Renderable=_NoopRenderable):
             id: The ID of the widget in the DOM.
             classes: The CSS classes for the widget.
             disabled: Whether the widget is disabled or not.
-            sixel_options: Sixel encoding options.
+            sixel_options: Sixel encoding options.  When ``None``, falls back to
+                ``self.DEFAULT_OPTIONS``.
         """
         super().__init__(
             image=image,
@@ -114,7 +123,7 @@ class Image(BaseImage, Renderable=_NoopRenderable):
             classes=classes,
             disabled=disabled,
         )
-        self._sixel_options = sixel_options
+        self._sixel_options = sixel_options if sixel_options is not None else self.DEFAULT_OPTIONS
 
     @override
     @BaseImage.image.setter  # type: ignore
@@ -190,7 +199,10 @@ class _ImageSixelImpl(Widget, can_focus=False, inherit_css=False):
             )
 
         sixel_segments = self._get_sixel_segments(sixel_data)
-        lines = [Strip([])] * (crop.height - 1) + [Strip(sixel_segments, cell_length=crop.width)]
+        clear_style = self._get_clear_style()
+        clear_segment = Segment(" " * crop.width, style=clear_style)
+        lines = [Strip([clear_segment], cell_length=crop.width) for _ in range(crop.height - 1)]
+        lines.append(Strip([clear_segment, *sixel_segments], cell_length=crop.width))
         return lines
 
     def _image_to_sixels(
@@ -223,6 +235,10 @@ class _ImageSixelImpl(Widget, can_focus=False, inherit_css=False):
     def _get_background_rgba(self) -> BackgroundColor:
         _, color = self.background_colors
         return (color.r, color.g, color.b, color.a)
+
+    def _get_clear_style(self) -> Style:
+        _, color = self.background_colors
+        return Style(bgcolor=color.rich_color)
 
     def _get_sixel_segments(self, sixel_data: str) -> Iterable[Segment]:
         visible_region = self.screen.find_widget(self).visible_region
