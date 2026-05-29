@@ -1,5 +1,81 @@
 # Changelog
 
+## [0.5.0](https://github.com/NSPC911-forks/textual-image/compare/v0.13.1...v0.5.0) (2026-05-29)
+
+
+### ⚠ BREAKING CHANGES
+
+* rename to textual-image
+* consistent usage of underscore for symbols
+* refactor and reorganize code
+
+### Features
+
+* ability to override cell size using env vars ([448ecff](https://github.com/NSPC911-forks/textual-image/commit/448ecff8e6b7810e8e4e97ef2b2246c537e99b4d))
+* add ability to override sixel encoder func ([1f0cae6](https://github.com/NSPC911-forks/textual-image/commit/1f0cae6bddc5a4bb52c8b903c94f973b805b5ede))
+* add byte stream support ([b697ce0](https://github.com/NSPC911-forks/textual-image/commit/b697ce01c6fe3ecbb4d746b1adc78907e58da93d))
+* add justfile to automate development workflows ([e4dd264](https://github.com/NSPC911-forks/textual-image/commit/e4dd264c5946759bc91a90417e19c451c3337628))
+* add non-seekable stream support ([c2b0a76](https://github.com/NSPC911-forks/textual-image/commit/c2b0a7698cec1b868b9721877d6d18b77e6947ca))
+* add py.typed marker ([072f279](https://github.com/NSPC911-forks/textual-image/commit/072f27922ca904d13792934f3487a379cad7eb14))
+* add sixel support for transparent images ([cd8095c](https://github.com/NSPC911-forks/textual-image/commit/cd8095ca486ce77c00b8d305b2e8786bd24783b6))
+* add Textual widget for images ([c2ea342](https://github.com/NSPC911-forks/textual-image/commit/c2ea342d500cf535f8304845dc313f86d878c4da))
+* add unicode fallback to render images ([14f30ff](https://github.com/NSPC911-forks/textual-image/commit/14f30ff65a0fa65b7984b26039f298bd46286b3d))
+* basic Windows support ([79d1114](https://github.com/NSPC911-forks/textual-image/commit/79d1114df02c86f583c089b33710d62d492642c4))
+* implement async processing in textual widget ([7425506](https://github.com/NSPC911-forks/textual-image/commit/742550648854c5ea8042c6553f1e813e13adcb08))
+* implement rich renderable for images ([a7371cc](https://github.com/NSPC911-forks/textual-image/commit/a7371cc64da8fc5bf6768c639d67d03ca1ef7ff6))
+* improve demo ([26595b0](https://github.com/NSPC911-forks/textual-image/commit/26595b037d08ebb89ca230913dfa78dbf275d002))
+* improve error handling ([ac24d5e](https://github.com/NSPC911-forks/textual-image/commit/ac24d5e477ff8338be9c29c2f99257d3c05181c7))
+* modernize development workflow ([3e0b30e](https://github.com/NSPC911-forks/textual-image/commit/3e0b30e1d33c671868fdf3454fe5d5c40f0eced5))
+* python 3.13 support ([f14cdab](https://github.com/NSPC911-forks/textual-image/commit/f14cdabc399462359309920f6877b8fea9859c24))
+* sixel encoding optimization ([c73b2f7](https://github.com/NSPC911-forks/textual-image/commit/c73b2f7b1911cc38bb75958751884697f5f19c85))
+* sixel support ([3afd860](https://github.com/NSPC911-forks/textual-image/commit/3afd860a345c9409f4f95ad3059d348fd5993057))
+* use escape sequence to get cell size ([a13bb9c](https://github.com/NSPC911-forks/textual-image/commit/a13bb9c768011e67e4a743a04584357d2bcbc320))
+
+
+### Bug Fixes
+
+* add missing files in distribution ([3370879](https://github.com/NSPC911-forks/textual-image/commit/33708793bb3a7437d72bfa3279d4858ec03e9683))
+* add missing py.typed marker ([db0f83f](https://github.com/NSPC911-forks/textual-image/commit/db0f83f90b37bedaba5e064ebd7a020b7673a74e))
+* don't emit transparent pixels for sixel ([f132121](https://github.com/NSPC911-forks/textual-image/commit/f1321210315c1e5b1fcf93faf7c720fd2fcd7638))
+* fall back to default cell size ([524f6e4](https://github.com/NSPC911-forks/textual-image/commit/524f6e47d6add6daa8f16050be4212ff493d90eb))
+* fix failing assertion ([00e2d01](https://github.com/NSPC911-forks/textual-image/commit/00e2d010a57b8d02f9eb2db371132b109e5c51b2))
+* fix re-rendering TGP images ([e1c13bc](https://github.com/NSPC911-forks/textual-image/commit/e1c13bcc808a7f74b33e7d5da012910a0fac9153))
+* fix render method selection in demo ([79c12c1](https://github.com/NSPC911-forks/textual-image/commit/79c12c1946cd9f5a78b0f0bcb9698d8f81586f4c))
+* fix zero width/height ([98ee28d](https://github.com/NSPC911-forks/textual-image/commit/98ee28d9502a04052d3ed81ed1914a1f2a883886))
+* improve cursor position handling for sixels ([bb37ee4](https://github.com/NSPC911-forks/textual-image/commit/bb37ee41d3b7c27d7f826ae704c2bd96845c6218))
+* include demo image ([4d1e516](https://github.com/NSPC911-forks/textual-image/commit/4d1e516946e8f64a5c6fc60310e9fba654a84241))
+* no screen error fallback ([#74](https://github.com/NSPC911-forks/textual-image/issues/74)) ([9cce067](https://github.com/NSPC911-forks/textual-image/commit/9cce06720332b8ea22f68e7dd806040504f60fa3))
+* prevent image from not being rendered ([05566f9](https://github.com/NSPC911-forks/textual-image/commit/05566f93e34dff8fa84035b9865f15aaf4d55cbe))
+* re-rendering widget on image change ([59f83d6](https://github.com/NSPC911-forks/textual-image/commit/59f83d648d0ef927f8a680ebb484072f19f5b6cc))
+* reorder preferred rendering methods ([a5a4efb](https://github.com/NSPC911-forks/textual-image/commit/a5a4efb80253e589071c26ea8339eed8283be88f))
+* replace deprecated PIL getdata() with get_flattened_data() ([5d924a1](https://github.com/NSPC911-forks/textual-image/commit/5d924a13edeaebf89d272d9539ffd7a298e4b966))
+* update uv.lock ([224bd61](https://github.com/NSPC911-forks/textual-image/commit/224bd61ebe94360df8b89c311228dd8d2231af3b))
+
+
+### Documentation
+
+* add badges to README.md ([f3239db](https://github.com/NSPC911-forks/textual-image/commit/f3239db1b40673f69ded016f046d59fff05599ac))
+* add demo gif to readme ([960d334](https://github.com/NSPC911-forks/textual-image/commit/960d334e9e6d10550ccd97a9037cae893c6a7fc4))
+* add docstrings ([ff52e39](https://github.com/NSPC911-forks/textual-image/commit/ff52e3907fcf06cc7ba24b282ba2b097cf4b0f4c))
+* add information about tested terminals ([3e9f738](https://github.com/NSPC911-forks/textual-image/commit/3e9f73811b5ffc2c203f500f0a60c295d1ae5b47))
+* add README.md ([1f23367](https://github.com/NSPC911-forks/textual-image/commit/1f23367bbae06d8fb0916b114e7494c9cda61004))
+* add sixel support to README ([52ab610](https://github.com/NSPC911-forks/textual-image/commit/52ab6104016bf4eeca7e881957df0f9e562e6286))
+* clarify textual-serve support and add alternative link ([bac6a81](https://github.com/NSPC911-forks/textual-image/commit/bac6a81c6283959c5b6e0bf458886ffa4d8b7c37))
+* cleanup compatibility matrix ([652f7ee](https://github.com/NSPC911-forks/textual-image/commit/652f7ee91b7a6b6fd30b122ae756999ac37a308d))
+* describe how to enable Sixels on xterm ([f68697c](https://github.com/NSPC911-forks/textual-image/commit/f68697cd6e359bc4a883d7e090dc05e3faf0183e))
+* describe the high image issue in the README ([84389ee](https://github.com/NSPC911-forks/textual-image/commit/84389ee1eb14502cefaa44358cac8ba739834bc5))
+* fix wrong example ([14d360b](https://github.com/NSPC911-forks/textual-image/commit/14d360bf22b083d0705cd0730b9b212fc1f86582))
+* mention warp and textual-serve in README ([7c38db8](https://github.com/NSPC911-forks/textual-image/commit/7c38db8a8f334394b0b8bc333c887fc0a8a9746d))
+* update Windows Terminal note ([76c5c91](https://github.com/NSPC911-forks/textual-image/commit/76c5c91a94f4761cb6b299990e690e9ade95aaf3))
+
+
+### Miscellaneous Chores
+
+* consistent usage of underscore for symbols ([0b0d6e8](https://github.com/NSPC911-forks/textual-image/commit/0b0d6e80676b5b79a7dd8bff9ad8386e1a56dfa0))
+* refactor and reorganize code ([3dc0190](https://github.com/NSPC911-forks/textual-image/commit/3dc01907e8dc005e34f567b80915e0ac0d91dd5e))
+* release 0.1.1 ([39d1f9f](https://github.com/NSPC911-forks/textual-image/commit/39d1f9f6b2608e029c59de5f0bb13f6604828790))
+* rename to textual-image ([5552677](https://github.com/NSPC911-forks/textual-image/commit/5552677a070058ead5d2240030b9da6a489e8f88))
+
 ## [0.13.1](https://github.com/lnqs/textual-image/compare/v0.13.0...v0.13.1) (2026-05-29)
 
 
