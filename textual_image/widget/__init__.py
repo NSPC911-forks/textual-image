@@ -16,7 +16,7 @@ from textual_image.widget.sixel import Image as SixelImage
 
 # Run `get_cell_size()` once to fill the cache,
 # as querying the terminal isn't possible anymore once Textual is started.
-get_cell_size()
+# get_cell_size()
 
 
 class AutoImage(BaseImage, Renderable=AutoRenderable):
