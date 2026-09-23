@@ -2,9 +2,10 @@
 
 import logging
 import sys
-from typing import Type
+from typing import Type, TypeAlias
 
-from textual_image.renderable import iterm2, sixel, tgp
+from textual_image._terminal import TerminalCapabilities, probe_terminal
+from textual_image.renderable import iterm2
 from textual_image.renderable.halfcell import Image as HalfcellImage
 from textual_image.renderable.iterm2 import Image as ITerm2Image
 from textual_image.renderable.sixel import Image as SixelImage
@@ -13,29 +14,50 @@ from textual_image.renderable.unicode import Image as UnicodeImage
 
 logger = logging.getLogger(__name__)
 
-is_tty = sys.__stdout__ and sys.__stdout__.isatty()
+ImageType: TypeAlias = Type[TGPImage | ITerm2Image | SixelImage | HalfcellImage | UnicodeImage]
 
-Image: Type[TGPImage | ITerm2Image | SixelImage | HalfcellImage | UnicodeImage]
 
-# TGP should be on top, as it performs way better than Sixel.
-# However, the only terminal with TGP unicode diacritic support I know of is Kitty.
-# Konsole and wezterm report TGP support, but don't work with our placeholder implementation, but do with Sixel.
-# As Kitty does *not* support Sixel, this order should be best in terms of compatibility.
-# but wezterm supports iterm2, so we check that before sixel
-if is_tty and iterm2.query_terminal_support():
-    logger.debug("iTerm2 support detected")
-    Image = ITerm2Image
-elif is_tty and sixel.query_terminal_support():
-    logger.debug("Sixel support detected")
-    Image = SixelImage
-elif is_tty and tgp.query_terminal_support():
-    logger.debug("Terminal Graphics Protocol support detected")
-    Image = TGPImage
-elif is_tty:
+def select_image_class(capabilities: TerminalCapabilities | None = None) -> ImageType:
+    """Select the best renderable, probing synchronously when needed.
+
+    Pass externally detected capabilities when another event loop owns stdin.
+
+    Args:
+        capabilities: Previously detected terminal capabilities.
+
+    Returns:
+        The selected renderable class.
+    """
+    if not sys.__stdout__ or not sys.__stdout__.isatty():
+        logger.debug("Not connected to a terminal, falling back to unicode")
+        return UnicodeImage
+    if iterm2.query_terminal_support():
+        logger.debug("iTerm2 support detected")
+        return ITerm2Image
+
+    capabilities = capabilities or probe_terminal()
+    if capabilities.sixel:
+        logger.debug("Sixel support detected")
+        return SixelImage
+    if capabilities.tgp:
+        logger.debug("Terminal Graphics Protocol support detected")
+        return TGPImage
+
     logger.debug("Connected to a terminal, using half cell rendering")
-    Image = HalfcellImage
-else:
-    logger.debug("Not connected to a terminal, falling back to unicode")
-    Image = UnicodeImage
+    return HalfcellImage
 
-__all__ = ["Image", "TGPImage", "SixelImage", "ITerm2Image", "HalfcellImage", "UnicodeImage"]
+
+# Importing this module must not read stdin. Applications can replace this
+# fallback with select_image_class() after their terminal driver has started.
+Image: ImageType = HalfcellImage if sys.__stdout__ and sys.__stdout__.isatty() else UnicodeImage
+
+__all__ = [
+    "Image",
+    "ImageType",
+    "select_image_class",
+    "TGPImage",
+    "SixelImage",
+    "ITerm2Image",
+    "HalfcellImage",
+    "UnicodeImage",
+]

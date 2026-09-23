@@ -7,7 +7,7 @@ import sys
 from contextlib import contextmanager
 from random import randint
 from types import SimpleNamespace
-from typing import Iterator, NamedTuple, cast
+from typing import Iterator, NamedTuple
 
 from ._tmux import maybe_tmux_escape
 
@@ -54,6 +54,9 @@ class TerminalCapabilities(NamedTuple):
     """Whether the terminal reported Terminal Graphics Protocol support."""
 
 
+_terminal_capabilities: TerminalCapabilities | None = None
+
+
 def get_cell_size() -> CellSize:
     """Get size information from the terminal.
 
@@ -64,6 +67,56 @@ def get_cell_size() -> CellSize:
 
     """
     return probe_terminal().cell_size
+
+
+def set_terminal_capabilities(capabilities: TerminalCapabilities | None) -> None:
+    """Set capabilities detected by an external terminal event loop.
+
+    Pass ``None`` to clear the cached value and allow a synchronous probe.
+
+    Args:
+        capabilities: Capabilities to cache, or ``None`` to clear them.
+    """
+    global _terminal_capabilities
+    _terminal_capabilities = capabilities
+
+
+def terminal_probe_sequence(query_cell_size: bool = True) -> str:
+    """Build a batched terminal capability query.
+
+    The primary device attributes query is last so its response can be used as
+    a sentinel by asynchronous terminal drivers.
+
+    Args:
+        query_cell_size: Whether to request the terminal cell size.
+
+    Returns:
+        The terminal query sequence.
+    """
+    sequence = _tgp_support_query()
+    if query_cell_size:
+        sequence += "\x1b[16t"
+    sequence += "\x1b[c"
+    return prepare_terminal_sequence(sequence)
+
+
+def parse_terminal_response(sequence: str, cell_size: CellSize | None = None) -> TerminalCapabilities:
+    """Parse replies to :func:`terminal_probe_sequence`.
+
+    Args:
+        sequence: Concatenated terminal response sequences.
+        cell_size: Cell size obtained by another mechanism, such as a Textual
+            resize event. A cell-size response in ``sequence`` takes precedence.
+
+    Returns:
+        Parsed terminal capabilities.
+    """
+    sixel, tgp, width, height = _parse_probe_response(sequence)
+    if width and height:
+        cell_size = CellSize(width, height)
+    elif cell_size is None:
+        cell_size = _fallback_cell_size()
+    return TerminalCapabilities(cell_size, sixel=sixel, tgp=tgp)
 
 
 def probe_terminal() -> TerminalCapabilities:
@@ -79,8 +132,8 @@ def probe_terminal() -> TerminalCapabilities:
     Raises:
         TerminalError: If stdout is closed
     """
-    if hasattr(probe_terminal, "_result"):
-        return cast("TerminalCapabilities", getattr(probe_terminal, "_result"))
+    if _terminal_capabilities is not None:
+        return _terminal_capabilities
 
     if not sys.__stdout__:
         raise TerminalError("stdout is closed")
@@ -102,42 +155,40 @@ def probe_terminal() -> TerminalCapabilities:
 
         try:
             with capture_until_primary_da(_PROBE_TIMEOUT) as response:
-                sys.__stdout__.write(_tgp_support_query())
-                if need_cell_size_query:
-                    sys.__stdout__.write("\x1b[16t")
-                sys.__stdout__.write("\x1b[c")
+                sys.__stdout__.write(terminal_probe_sequence(need_cell_size_query))
                 sys.__stdout__.flush()
 
-            sixel, tgp, queried_width, queried_height = _parse_probe_response(response.sequence)
-            if need_cell_size_query and queried_width and queried_height:
-                width, height = queried_width, queried_height
+            capabilities = parse_terminal_response(
+                response.sequence,
+                CellSize(width, height) if width and height else None,
+            )
+            sixel = capabilities.sixel
+            tgp = capabilities.tgp
+            width, height = capabilities.cell_size
         except (TerminalError, TimeoutError) as e:
             logger.warning("Failed to probe terminal capabilities", exc_info=e)
 
     if height == 0 or width == 0:
-        # Try environment variables (set by textual-serve for web terminals)
-        match os.environ:
-            case {
-                "TEXTUAL_CELL_WIDTH": str(width_str),
-                "TEXTUAL_CELL_HEIGHT": str(height_str),
-            } if width_str.isdigit() and height_str.isdigit():
-                width = int(width_str)
-                height = int(height_str)
-
-    if height == 0 or width == 0:
-        # Still didn't work, use VT340 sizes as default
-        width = 10
-        height = 20
+        width, height = _fallback_cell_size()
 
     capabilities = TerminalCapabilities(CellSize(width, height), sixel=sixel, tgp=tgp)
-    setattr(probe_terminal, "_result", capabilities)
+    set_terminal_capabilities(capabilities)
     return capabilities
 
 
 def _tgp_support_query() -> str:
-    """Build a TGP support query, tmux-escaped when needed."""
-    sequence = f"{_TGP_MESSAGE_START}i={randint(1, 2**32)},s=1,v=1,a=q,t=d,f=24;AAAA{_TGP_MESSAGE_END}"
-    return prepare_terminal_sequence(sequence)
+    """Build a TGP support query."""
+    return f"{_TGP_MESSAGE_START}i={randint(1, 2**32)},s=1,v=1,a=q,t=d,f=24;AAAA{_TGP_MESSAGE_END}"
+
+
+def _fallback_cell_size() -> CellSize:
+    match os.environ:
+        case {
+            "TEXTUAL_CELL_WIDTH": str(width),
+            "TEXTUAL_CELL_HEIGHT": str(height),
+        } if width.isdigit() and height.isdigit():
+            return CellSize(int(width), int(height))
+    return CellSize(10, 20)
 
 
 def _parse_probe_response(sequence: str) -> tuple[bool, bool, int, int]:

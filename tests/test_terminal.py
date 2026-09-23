@@ -8,12 +8,16 @@ from unittest.mock import MagicMock, patch
 from pytest import raises
 
 from textual_image._terminal import (
+    CellSize,
     TerminalCapabilities,
     TerminalError,
     capture_terminal_response,
     capture_until_primary_da,
     get_cell_size,
+    parse_terminal_response,
     probe_terminal,
+    set_terminal_capabilities,
+    terminal_probe_sequence,
 )
 
 if sys.version_info >= (3, 12):
@@ -23,8 +27,7 @@ else:
 
 
 def _clear_probe_cache() -> None:
-    if hasattr(probe_terminal, "_result"):
-        delattr(probe_terminal, "_result")
+    set_terminal_capabilities(None)
 
 
 def test_get_cell_size_stdout_closed() -> None:
@@ -129,7 +132,7 @@ def test_probe_terminal_sixel_and_tgp() -> None:
     assert caps == TerminalCapabilities(cell_size=caps.cell_size, sixel=True, tgp=True)
     assert caps.cell_size == (8, 16)
     assert any("a=q" in part for part in written)
-    assert "\x1b[c" in written
+    assert any("\x1b[c" in part for part in written)
     assert not any("\x1b[16t" in part for part in written)
 
 
@@ -172,8 +175,8 @@ def test_probe_terminal_queries_cell_size_when_ioctl_fails() -> None:
 
     assert caps.cell_size == (10, 20)
     assert caps.sixel is True
-    assert "\x1b[16t" in written
-    assert "\x1b[c" in written
+    assert any("\x1b[16t" in part for part in written)
+    assert any("\x1b[c" in part for part in written)
 
 
 def test_probe_terminal_all_three_replies() -> None:
@@ -230,6 +233,50 @@ def test_probe_terminal_caches_result() -> None:
 
     assert first is second
     assert calls == 1
+
+
+def test_terminal_probe_sequence() -> None:
+    with patch("textual_image._terminal.prepare_terminal_sequence") as prepare:
+        prepare.side_effect = lambda sequence: sequence
+        sequence = terminal_probe_sequence()
+
+    assert "a=q" in sequence
+    assert sequence.endswith("\x1b[16t\x1b[c")
+    prepare.assert_called_once_with(sequence)
+
+
+def test_terminal_probe_sequence_without_cell_size() -> None:
+    sequence = terminal_probe_sequence(query_cell_size=False)
+
+    assert "\x1b[16t" not in sequence
+    assert sequence.endswith("\x1b[c")
+
+
+def test_parse_terminal_response() -> None:
+    capabilities = parse_terminal_response("\x1b_Gi=1;OK\x1b\\\x1b[6;16;8t\x1b[?62;4c")
+
+    assert capabilities == TerminalCapabilities(CellSize(8, 16), sixel=True, tgp=True)
+
+
+def test_parse_terminal_response_uses_supplied_cell_size() -> None:
+    capabilities = parse_terminal_response("\x1b[?62c", CellSize(9, 18))
+
+    assert capabilities == TerminalCapabilities(CellSize(9, 18), sixel=False, tgp=False)
+
+
+def test_parse_terminal_response_uses_fallback_cell_size() -> None:
+    with patch.dict("os.environ", {}, clear=True):
+        capabilities = parse_terminal_response("\x1b[?62c")
+
+    assert capabilities.cell_size == CellSize(10, 20)
+
+
+def test_set_terminal_capabilities() -> None:
+    capabilities = TerminalCapabilities(CellSize(9, 18), sixel=True, tgp=False)
+    set_terminal_capabilities(capabilities)
+
+    with patch("sys.__stdout__", None):
+        assert probe_terminal() is capabilities
 
 
 def test_capture_until_primary_da_success() -> None:

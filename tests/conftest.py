@@ -14,10 +14,6 @@ def close_stdin() -> Iterator[None]:
 
 @fixture(autouse=True)
 def mock_terminal_capabilities() -> None:
-    from textual_image._terminal import CellSize, TerminalCapabilities, probe_terminal
+    from textual_image._terminal import CellSize, TerminalCapabilities, set_terminal_capabilities
 
-    setattr(
-        probe_terminal,
-        "_result",
-        TerminalCapabilities(CellSize(10, 20), sixel=False, tgp=False),
-    )
+    set_terminal_capabilities(TerminalCapabilities(CellSize(10, 20), sixel=False, tgp=False))
